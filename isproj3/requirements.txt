@@ -1,0 +1,2 @@
+1-como verificamos se um material foi adicionado através do projeto 2?
+2-os alunos do projeto 2 são também guardados na tabela dos subscribers?

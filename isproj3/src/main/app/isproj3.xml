@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:jersey="http://www.mulesoft.org/schema/mule/jersey" xmlns:smtp="http://www.mulesoft.org/schema/mule/smtp" xmlns:twitter="http://www.mulesoft.org/schema/mule/twitter" xmlns:schedulers="http://www.mulesoft.org/schema/mule/schedulers" xmlns:quartz="http://www.mulesoft.org/schema/mule/quartz" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/cxf http://www.mulesoft.org/schema/mule/cxf/current/mule-cxf.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/quartz http://www.mulesoft.org/schema/mule/quartz/current/mule-quartz.xsd
+http://www.mulesoft.org/schema/mule/schedulers http://www.mulesoft.org/schema/mule/schedulers/current/mule-schedulers.xsd
+http://www.mulesoft.org/schema/mule/twitter http://www.mulesoft.org/schema/mule/twitter/current/mule-twitter.xsd
+http://www.mulesoft.org/schema/mule/jersey http://www.mulesoft.org/schema/mule/jersey/current/mule-jersey.xsd
+http://www.mulesoft.org/schema/mule/smtp http://www.mulesoft.org/schema/mule/smtp/current/mule-smtp.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <db:mysql-config name="MySQL_Configuration" host="localhost" port="3306" user="root" password="consolaPS3" database="isproj3" doc:name="MySQL Configuration"/>
+    <twitter:config name="Twitter__Configuration" accessKey="3527940019-XudeItnYoN5Y7UQVOIiDTZFfJBPtTrdnL1hsEH2" accessSecret="gnQptmrElZd6RK5GZeGnXjAxhQ6xRxPU2mcHP4Pp3FpIg" consumerKey="pStJ4WtmKbga9f0T6NcZ8xgZI" consumerSecret="yh7x3UruzUDvGSuBh4br9cVjmKymgL1qPfOCl2hAUSDOClmVpN" doc:name="Twitter: Configuration" />
+    <smtp:gmail-connector name="Gmail" subject="confirmation email" validateConnections="true" doc:name="Gmail" contentType="text/plain" fromAddress="bataover9000@gmail.com" replyToAddresses="bataover9000@gmail.com"/>
+    <db:mysql-config name="MySQL_Configuration1" host="localhost" port="3306" user="root" password="oscaroscar" database="isproj3" doc:name="MySQL Configuration"/>
+    <http:request-config name="HTTP_Request_Configuration"  host="localhost" port="8080" basePath="/ISproj3-rest/rest/project3webservices" doc:name="HTTP Request Configuration" protocol="HTTP"/>
+    <mulexml:jaxb-context name="JAXB_Context" packageNames="xmlrest" doc:name="JAXB Context"/>
+    <db:mysql-config name="MySQL_Configuration2" host="localhost" port="3306" user="root" password="oscaroscar" database="isproj3" doc:name="MySQL Configuration"/>
+    <cxf:configuration name="CXF_Configuration" enableMuleSoapHeaders="true" initializeStaticBusInstance="true" doc:name="CXF Configuration"/>
+    <flow name="materials">
+        <db:select config-ref="MySQL_Configuration" doc:name="Database">
+            <db:parameterized-query><![CDATA[select * from Materials]]></db:parameterized-query>
+        </db:select>
+        <set-session-variable variableName="yesterdaymaterials" value="#[payload]" doc:name="yesterdaymaterials"/>
+        <set-session-variable variableName="restmethod" value="getmaterials" doc:name="restmethod"/>
+        <flow-ref name="REST" doc:name="REST"/>
+    </flow>
+    <flow name="updatematerials">
+        <db:delete config-ref="MySQL_Configuration" doc:name="delete old materials">
+            <db:parameterized-query><![CDATA[delete from Materials;]]></db:parameterized-query>
+        </db:delete>
+        <foreach collection="#[sessionVars.currentmaterials]" doc:name="For Each">
+            <db:insert config-ref="MySQL_Configuration" doc:name="Database">
+                <db:parameterized-query><![CDATA[INSERT INTO Materials (id,courseid) VALUES(#[sessionVars.currentmaterials.get("id")],#[sessionVars.currentmaterials.get("courseid")])]]></db:parameterized-query>
+            </db:insert>
+        </foreach>
+    </flow>
+    <flow name="REST">
+        <choice doc:name="what method do we call?" tracking:enable-default-events="true">
+            <when expression="#[sessionVars.restmethod=='getmaterials']">
+                <http:request config-ref="HTTP_Request_Configuration" path="/getmaterials" method="GET" doc:name="HTTP-getMaterials"/>
+                <mulexml:jaxb-xml-to-object-transformer returnClass="xmlrest.ListCourses" jaxbContext-ref="JAXB_Context" doc:name="XML to JAXB Object"/>
+                <set-session-variable variableName="currentmaterials" value="#[payload]" doc:name="currentmaterials"/>
+                <scripting:component doc:name="Groovy">
+                    <scripting:script engine="Groovy"><![CDATA[import xmlrest.ListCourses;
+
+
+ListCourses lc=new ListCourses(sessionVars['yesterdaymaterials']);
+
+ArrayList<Byte> list=lc.differentCourses(payload);
+
+sessionVars['currentmaterials']=new ArrayList<HashMap<String,Integer>>();
+
+for(HashMap<String,Integer> h: payload.toMap()){
+	sessionVars['currentmaterials'].add(h);
+}
+
+payload=list;
+
+]]></scripting:script>
+                </scripting:component>
+                <set-session-variable variableName="changedcourses" value="#[payload]" doc:name="changedcourses"/>
+                <foreach collection="#[payload]" doc:name="For Each">
+                    <set-session-variable variableName="course" value="#[payload]" doc:name="course"/>
+                    <db:select config-ref="MySQL_Configuration" doc:name="get subs">
+                        <db:parameterized-query><![CDATA[select email from Subscribers where confirmed=1 and course=#[payload]]]></db:parameterized-query>
+                    </db:select>
+                    <set-session-variable variableName="listsubs" value="#[payload]" doc:name="listsubs"/>
+                    <foreach collection="#[sessionVars.listsubs]" doc:name="For Each">
+                        <flow-ref name="emails" doc:name="emails"/>
+                    </foreach>
+                    <http:request config-ref="HTTP_Request_Configuration" path="/getstudents" method="GET" doc:name="HTTP-getStudents">
+                        <http:request-builder>
+                            <http:query-param paramName="courseid" value="#[sessionVars.course]"/>
+                        </http:request-builder>
+                    </http:request>
+                    <json:json-to-object-transformer returnClass="datarest.ListStudents" doc:name="JSON to Object"/>
+                </foreach>
+                <twitter:update-status config-ref="Twitter__Configuration" status="#[payload]" doc:name="Twitter"/>
+                <db:update config-ref="MySQL_Configuration" doc:name="reset daily tweets">
+                    <db:parameterized-query><![CDATA[update EmailCount set today=0 where id=1]]></db:parameterized-query>
+                </db:update>
+                <flow-ref name="updatematerials" doc:name="updatematerials"/>
+            </when>
+            <otherwise>
+                <logger message="#['logger0'+sessionVars.restmethod]" level="INFO" doc:name="Logger"/>
+            </otherwise>
+        </choice>
+    </flow>
+    <flow name="Twitter">
+        <poll doc:name="Poll">
+            <fixed-frequency-scheduler frequency="30" timeUnit="SECONDS" startDelay="1"/>
+            <logger message="entra aqui" level="INFO" doc:name="Logger"/>
+        </poll>
+        <flow-ref name="materials" doc:name="materials"/>
+        <logger message="#['res:'+sessionVars.mailstosend]" level="INFO" doc:name="Logger"/>
+    </flow>
+    <flow name="SOAPFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/subs" doc:name="HTTP"/>
+        <cxf:jaxws-service  doc:name="CXF" configuration-ref="CXF_Configuration" serviceClass="ws.SubscriberService"/>
+        <set-session-variable   doc:name="operation" value="#[header:INVOCATION:cxf_operation]" variableName="operation"/>
+        <set-session-variable variableName="operation" value="#[temp = (java.lang.String) sessionVars.operation; sessionVars.operation = temp.substring(temp.lastIndexOf('}')+1) ; sessionVars.operation=sessionVars.operation.replace(&quot; &quot;,&quot;&quot;)]" doc:name="parse operation"/>
+        <choice doc:name="list,create or delete?" tracking:enable-default-events="true">
+            <when expression="#[sessionVars.operation=='listSubs']">
+                <db:select config-ref="MySQL_Configuration" doc:name="List subs">
+                    <db:parameterized-query><![CDATA[SELECT * FROM Subscribers;]]></db:parameterized-query>
+                </db:select>
+                <set-session-variable variableName="response" value="#[payload.toString()]" doc:name="set response to result list"/>
+            </when>
+            <when expression="#[sessionVars.operation=='createSub']">
+                <set-session-variable variableName="email" value="#[payload[0]]" doc:name="email"/>
+                <set-session-variable variableName="course" value="#[payload[1]]" doc:name="course"/>
+                <db:insert config-ref="MySQL_Configuration" doc:name="Create unconfirmed sub">
+                    <db:parameterized-query><![CDATA[INSERT into Subscribers(email,course) values(#[payload[0]] ,#[payload[1]]);]]></db:parameterized-query>
+                </db:insert>
+                <set-session-variable variableName="op" value="create" doc:name="op='create'"/>
+                <flow-ref name="emails" doc:name="send emails"/>
+                <set-session-variable variableName="response" value="true" doc:name="set response"/>
+            </when>
+            <when expression="#[sessionVars.operation=='delSub']">
+                <set-session-variable variableName="email" value="#[payload[0]]" doc:name="email"/>
+                <set-session-variable variableName="course" value="#[payload[1]]" doc:name="course"/>
+                <set-session-variable variableName="op" value="delete" doc:name="op='delete'"/>
+                <db:update config-ref="MySQL_Configuration" doc:name="set sub for deletion">
+                    <db:parameterized-query><![CDATA[update Subscribers set fordeletion=1 where email=#[sessionVars.email] and course=#[sessionVars.course]]]></db:parameterized-query>
+                </db:update>
+                <flow-ref name="emails" doc:name="emails"/>
+                <set-session-variable variableName="response" value="true" doc:name="set response"/>
+            </when>
+            <otherwise>
+                <set-session-variable variableName="response" value="#['requested operation doesn\'t exist.']" doc:name="set response(error)"/>
+            </otherwise>
+        </choice>
+        <set-payload value="#[sessionVars.response]" doc:name="Set Payload=response"/>
+    </flow>
+    <flow name="confirmop">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/confirmop" doc:name="HTTP"/>
+        <set-session-variable variableName="email" value="#[message.inboundProperties.'http.query.params'.get('email')]" doc:name="GET email"/>
+        <set-session-variable variableName="course" value="#[message.inboundProperties.'http.query.params'.get('course')]" doc:name="GET course"/>
+        <set-session-variable variableName="op" value="#[message.inboundProperties.'http.query.params'.get('op')]" doc:name="GET op"/>
+        <db:select config-ref="MySQL_Configuration" doc:name="get sub data">
+            <db:parameterized-query><![CDATA[select * from Subscribers where email=#[sessionVars.email] and course=#[sessionVars.course]]]></db:parameterized-query>
+        </db:select>
+        <choice tracking:enable-default-events="true" doc:name="sub exists? default:no">
+            <when expression="#[payload.size()&gt;=1]">
+                <choice tracking:enable-default-events="true" doc:name="create or delete?default:delete">
+                    <when expression="#[sessionVars.op=='create']">
+                        <db:update config-ref="MySQL_Configuration" doc:name="set confirmed to 1">
+                            <db:parameterized-query><![CDATA[UPDATE Subscribers SET confirmed=1 WHERE email=#[sessionVars.email] AND course=#[sessionVars.course] AND confirmed=0]]></db:parameterized-query>
+                        </db:update>
+                        <set-payload value="Account confirmed successfully." doc:name="account confirmed successfully"/>
+                    </when>
+                    <otherwise>
+                        <db:delete config-ref="MySQL_Configuration" doc:name="delete sub">
+                            <db:parameterized-query><![CDATA[delete from Subscribers where email=#[sessionVars.email] and course=#[sessionVars.course] and fordeletion=1]]></db:parameterized-query>
+                        </db:delete>
+                        <set-payload value="Account deleted successfully." doc:name="account deleted successfully"/>
+                    </otherwise>
+                </choice>
+            </when>
+            <otherwise>
+                <set-payload value="Your confirmation could not be made because account doesn't exist in the system." doc:name="error message"/>
+            </otherwise>
+        </choice>
+        <catch-exception-strategy doc:name="Catch Exception Strategy">
+            <logger message="ERROR!" level="INFO" doc:name="Logger"/>
+            <file:outbound-endpoint path="/home/bata/cenas" outputPattern="cenas.txt" responseTimeout="10000" doc:name="File"/>
+        </catch-exception-strategy>
+    </flow>
+    <flow name="emails">
+        <choice tracking:enable-default-events="true" doc:name="create, delete or update?default:delete">
+            <when expression="#[sessionVars.op=='create']">
+                <set-payload value="#['Confirm your account here: http://localhost:8081/confirmop?email='+sessionVars.email+'&amp;course='+sessionVars.course+'&amp;op=create']" doc:name="confirm create"/>
+            </when>
+            <when expression="">
+                <set-payload value="#['course '+sessionVars.course+' has changed.']" doc:name="updated course"/>
+            </when>
+            <otherwise>
+                <set-payload value="#['Confirm your account\'s deletion here: http://localhost:8081/confirmop?email='+sessionVars.email+'&amp;course='+sessionVars.course+'&amp;op=delete']" doc:name="confirm delete"/>
+            </otherwise>
+        </choice>
+        <smtp:outbound-endpoint host="smtp.gmail.com" port="587" user="bataover9000%40gmail.com" password="consolaPS3" connector-ref="Gmail" to="#[sessionVars.email]" from="bataover9000@gmail.com" subject="#['confirmation('+sessionVars.course+')']" replyTo="bataover9000@gmail.com" responseTimeout="10000" doc:name="confirmation email"/>
+        <db:update config-ref="MySQL_Configuration" doc:name="update email count">
+            <db:parameterized-query><![CDATA[update EmailCount set total=total+1, today=today+1 where id=1]]></db:parameterized-query>
+        </db:update>
+    </flow>
+</mule>
